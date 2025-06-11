@@ -1,0 +1,21 @@
+# Python virtual environments
+**/.venv/
+**/venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Node.js dependencies 
+frontend/node_modules/
+
+# Build outputs
+frontend/build/
+todo-application/backend/__pycache__/
+
+# Git metadata (usually not ignored, but just in case)
+.git/
+
+# OS files
+.DS_Store
+Thumbs.db
