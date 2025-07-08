@@ -20,12 +20,18 @@ FILENAME = "todos.json"
 # Helper functions
 # Function to read todos from the JSON file
 def read_todos():
-    if not os.path.isfile(FILENAME):
-        # Create the file if it does not exist
-        with open(FILENAME, "w") as file:
-            return json.dump([], file)
-    with open(FILENAME, "r") as file:
-        return json.load(file)
+    try:
+        # Try to read existing file
+        with open(FILENAME, 'r') as f:
+            todos = json.load(f)
+            if not isinstance(todos, list):  # Verify it's a list
+                raise ValueError("Invalid data format")
+            return todos
+    except (FileNotFoundError, json.JSONDecodeError, ValueError):
+        # If any error occurs, initialize a clean file
+        with open(FILENAME, 'w') as f:
+            json.dump([], f)
+        return []  # Always return a list
 
 # Function to get the next ID for a new todo
 def get_next_id():
