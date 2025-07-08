@@ -3,10 +3,18 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import json
-import os
+from fastapi.middleware.cors import CORSMiddleware
 
 # Initialize FastAPI app
 app = FastAPI()
+
+# Allow CORS
+app.add_middleware(CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Allow all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods
+    allow_headers=["*"],  # Allow all headers
+)
 
 # Define pydantic models
 class TodoCreate(BaseModel):
