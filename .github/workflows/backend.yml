@@ -1,0 +1,52 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [ main ]
+    paths: 
+      - 'todo-application/backend/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'todo-application/backend/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install dependencies
+      working-directory: ./todo-application/backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest
+        
+    - name: Run tests
+      working-directory: ./todo-application/backend
+      run: |
+        pytest -v
+    
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      working-directory: ./todo-application/backend
+      run: |
+        pip install -r requirements.txt
+        
+    - name: Start server (simulated deployment)
+      working-directory: ./todo-application/backend
+      run: |
+        echo "Deployment would happen here"
+        echo "Typically would deploy to Azure/AWS/Heroku etc."
