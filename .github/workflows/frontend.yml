@@ -2,8 +2,13 @@ name: Frontend CI/CD
 on:
   push:
     branches: [main]
-    paths: ['todo-application/frontend/**']
-
+    paths: 
+      - 'todo-application/frontend/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'todo-application/frontend/**'
+      
 jobs:
   quality:
     runs-on: ubuntu-latest
