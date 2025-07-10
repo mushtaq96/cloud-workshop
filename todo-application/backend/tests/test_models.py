@@ -1,5 +1,5 @@
 # tests/test_models.py
-from app import TodoCreate, Todo
+from src.app import TodoCreate, Todo
 
 class TestTodoModel:
     def test_todo_creation(self):
