@@ -9,6 +9,10 @@ on:
     paths:
       - 'todo-application/frontend/**'
 
+env:
+  ACR_Name: cloudworkshop
+  Frontend_Image: frontend-app
+
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -53,19 +57,35 @@ jobs:
         working-directory: ./todo-application/frontend
         run: npm run test:${{ matrix.test-type }} -- --ci --coverage
 
-  deploy:
+  build-and-deploy:
     needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Build and Push Docker
-        uses: docker/build-push-action@v5
+
+      - name: Azure Login
+        uses: azure/login@v1
         with:
-          context: todo-application/frontend
-          push: true
-          tags: |
-            ghcr.io/your-org/frontend:latest
-            ghcr.io/your-org/frontend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Build and push frontend image
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_Name }}.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      
+      - name: Build, tag and push
+        run: |
+          docker build -t ${{ env.ACR_Name }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:${{ github.sha }} ./todo-application/frontend
+          docker push ${{ env.ACR_Name }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+
+      - name: Deploy to Azure Container Apps
+        run: |
+          az containerapp update 
+            --name frontend-app 
+            --resource-group rg-mushtaqbokhari-6650 \
+            --image ${{ env.ACR_Name }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:${{ github.sha }} \
+            --environment todo-app-env \
+            --target-port 80 \
+            --ingress external

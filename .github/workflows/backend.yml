@@ -10,6 +10,10 @@ on:
     paths:
       - 'todo-application/backend/**'
 
+env:
+  ACR_Name: cloudworkshop
+  Backend_Image: backend-app
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -33,20 +37,35 @@ jobs:
       run: |
         pytest -v
     
-  deploy:
+  build-and-deploy:
     needs: test
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Install dependencies
-      working-directory: ./todo-application/backend
-      run: |
-        pip install -r requirements.txt
-        
-    - name: Start server (simulated deployment)
-      working-directory: ./todo-application/backend
-      run: |
-        echo "Deployment would happen here"
-        echo "Typically would deploy to Azure/AWS/Heroku etc."
+      - uses: actions/checkout@v4
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Build and push backend image
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_NAME }}.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      
+      - name: Build, tag, and push
+        run: |
+          docker build -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE }}:${{ github.sha }} ./todo-application/backend
+          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+      
+      - name: Deploy to Azure Container Apps
+        run: |
+          az containerapp update \
+            --name backend-app \
+            --resource-group rg-mushtaqbokhari-6650 \
+            --image ${{ env.ACR_NAME }}.azurecr.io/${{ env.BACKEND_IMAGE }}:${{ github.sha }} \
+            --environment todo-app-env \
+            --target-port 8000 \
+            --ingress internal
